@@ -1,10 +1,40 @@
 \documentclass{JLUThesis}
 %\usepackage[colorlinks,linkcolor=black]{hyperref} 
 \usepackage{amsmath}
+% \usepackage{multirow}
+% \usepackage{tikz}
+\usepackage{array}
+
+\usepackage{listings}
+
+\lstset{
+    columns=fullflexible,
+    keepspaces=true,
+    showspaces=false,
+    showtabs=false,
+    breaklines=true,
+    showstringspaces=false,
+    breakatwhitespace=true,
+    basicstyle=\ttfamily\normalsize,
+    framesep=3pt,
+    xleftmargin=6pt,
+    tabsize=4,
+    captionpos=b
+    keywordstyle        =   \bfseries,          % 关键字风格
+    % commentstyle        =   \rmfamily\itshape,  % 注释的风格，斜体
+    % stringstyle         =   \ttfamily,  % 字符串风格
+    flexiblecolumns,                % 别问为什么，加上这个
+    numbers             =   left,   % 行号的位置在左边
+    showspaces          =   true,  % 是否显示空格，显示了有点乱，所以不现实了
+    showstringspaces    =   true,
+    frame               =   lrtb,   % 显示边框
+}
 
 \begin{document}
 
 \let\cleardoublepage\clearpage
+\let\tt\texttt
+\let\bb\mathbb
 
 % 封面
 \makecover

@@ -237,7 +237,7 @@
 \ctexset {
     chapter = {
         format = \centering \zihao{3} \songti \bfseries,
-        titleformat = \hspace{-10pt},
+        titleformat = \hspace{0pt}, % -10pt
         beforeskip = {-20pt}, % -15pt
         afterskip = {25pt}, % 5pt
         number = \arabic{chapter},
@@ -245,13 +245,13 @@
     },
     section = {
         format = \raggedright \zihao{4} \songti \bfseries,
-        titleformat = \hspace{-10pt},
+        titleformat = \hspace{0pt}, % -10pt
         beforeskip = {20pt}, % 0pt
         afterskip = {20pt}, % 5pt
     },
     subsection = {
         format = \raggedright \zihao{-4} \songti \bfseries,
-        titleformat = \hspace{-10pt},
+        titleformat = \hspace{0pt}, % -10pt
         afterskip = {15pt}, % 5pt
     },
     subsubsection = {
@@ -264,7 +264,7 @@
 %                图表标题格式
 %-------------------------------------------------------------------------------
 
-\DeclareCaptionFont{heiti}{\heiti}
+\DeclareCaptionFont{heiti}{\heiti\zihao{5}}
 \renewcommand{\thefigure}{\thechapter-\arabic{figure}} % 图标题格式为章节号-图号
 \captionsetup[figure]{textfont=heiti, labelfont=heiti, labelsep=space} % 图标题为黑体
 \renewcommand{\thetable}{\thechapter-\arabic{table}}    % 表标题格式为章节号-表号
