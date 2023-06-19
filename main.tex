@@ -32,13 +32,13 @@
 
 \begin{document}
 
+% Syntactic sugar
 \let\cleardoublepage\clearpage
 \let\tt\texttt
 \let\bb\mathbb
 
 % 封面
 \makecover
-
 
 % 承诺书
 % \commitment
@@ -49,8 +49,6 @@
 % 英文摘要
 \input{data/eabstract}
 \thispagestyle{style@empty}
-
-
 
 % 目录
 \newpage
@@ -66,24 +64,15 @@
 \setcounter{page}{1}
 \pagestyle{style@normal}
 
-
 \input{data/chapter01.tex}
-
 \input{data/chapter02.tex}
-
 \input{data/chapter03.tex}
-
 \input{data/chapter04.tex}
-
 \input{data/chapter05.tex}
-
 \input{data/chapter06.tex}
-
 \input{data/chapter07.tex}
 
-% 参考文献
 \input{data/reference.tex}
-% 致谢
 \input{data/acknowledgement.tex}
 
 \end{document}
