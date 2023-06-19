@@ -1,5 +1,6 @@
 chapter*.tex
 *ment.tex
+
 *.pdf
 config.py
 
