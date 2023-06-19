@@ -1,4 +1,3 @@
-*.cfg
 data/*.tex
 figures/*
 *.pdf
