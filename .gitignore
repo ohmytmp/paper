@@ -2,3 +2,4 @@
 data/*.tex
 figures/*
 *.pdf
+config.py
