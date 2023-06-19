@@ -2,3 +2,18 @@ data/*.tex
 figures/*
 *.pdf
 config.py
+
+# VS Code & code runner
+.vscode
+tempCodeRunnerFile*
+
+*~
+.cache
+*.log
+archive
+example
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
