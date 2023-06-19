@@ -1,4 +1,5 @@
-data/*.tex
+chapter*.tex
+*ment.tex
 *.pdf
 config.py
 
