@@ -1,0 +1,207 @@
+\chapter{测试与对比}
+
+\section{测试项设计}
+
+\subsection{单元测试}
+
+通过本软件可选插件中的单元测试插件对本软件内核和默认附加插件进行测试。
+
+\subsection{部署测试1}
+
+部分使用 C++ 编写的模块需要依赖 OpenCV（C++ 依赖库）3.4 或更新版本。而对部分平台和编译器，如 Windows 上的 MinGW-w64，OpenCV 官方未直接给出相应的编译好的动态链接库。因此，开发者需要自行编译 OpenCV。
+
+\subsubsection{准备工作}
+
+首先，需要一个相对通畅的网络环境。
+
+若本地没有 MinGW-W64 C++ 编译器，需要从 MinGW-W64 官网获取得需要的版本的压缩包，解压并将 \tt{mingw64/bin} 添加到环境变量 \tt{PATH} 中。若本地没有 CMake，需要从 CMake 官网获取。
+
+使用 \tt{git clone} 命令克隆 OpenCV 官方仓库。进入文件夹后，使用 \tt{git reset --hard} 命令回退到需要的版本对应的提交，如 4.7.0 版本需要执行命令 \tt{git reset --hard 725e440d278aca07d35a5e8963ef990572b07316}。
+
+\subsubsection{配置并生成}
+
+打开 \tt{cmake-gui.exe}，选择 OpenCV 仓库的文件夹。点击 \tt{Configure}。先后选择 \tt{MinGW Makefiles} 和 \tt{Use default native compilers}。点击 \tt{Finish} 并等待配置完成。
+
+此时，GUI 界面将出现许多选项。其中，应当勾选 \tt{BUILD\_opencv\_world}。不应当勾选 \tt{ENABLE\_PRECOMPILED\_HEADERS}、\tt{WITH\_MSMF} 和 \tt{WITH\_OBSENSOR}，否则将会无法编译，这是因为 Windows 的 MinGW-W64 缺少部分依赖 \cite{opencv_cmake}。此外，如果只需要 C/C++ 依赖库，可以不勾选这些可选选项，以加快编译速度：\tt{BUILD\_JAVA}、\tt{BUILD\_opencv\_python\_bindings\_generator}、\tt{BUILD\_PERF\_TESTS}、\tt{BUILD\_TESTS}、\\\tt{BUILD\_opencv\_js\_bindings\_generator}、\tt{BUILD\_opencv\_ts}、\tt{BUILD\_opencv\_js}、\\\tt{BUILD\_opencv\_python\_tests}、\tt{BUILD\_opencv\_python3}、\tt{BUILD\_opencv\_apps} 和 \\\tt{BUILD\_opencv\_java\_bindings\_generator}。
+
+点击 \tt{Generate} 并等待生成完成.
+
+\subsubsection{构建}
+
+通过以下命令进行构建：
+
+\begin{lstlisting}[language=bash]
+mkdir -p build
+cd build
+mingw32-make -j 32
+mingw32-make install
+\end{lstlisting}
+
+其中，\tt{-j} 后的数字根据当前构建的计算机的性能给出，通常为计算机线程数。
+
+构建完成后，所需的库文件将在 \tt{build/install} 文件夹中。
+
+将 \tt{build/install/x64/mingw/bin} 文件夹添加到环境变量 \tt{PATH} 中。该文件夹中应包含名称类似 \tt{libopencv\_world470.dll} 的文件。
+
+\subsubsection{编译和链接}
+
+依赖 OpenCV 库的编译命令将会像这样：
+
+\begin{lstlisting}[language=bash]
+g++ "a.cpp" -o "a.exe" -w -g -O3 -static-libgcc \
+    -I "$Env:OPENCV470\include" \
+    -I "$Env:OPENCV470\include\opencv2" \
+    -L "$Env:OPENCV470\x64\mingw\lib" \
+    -llibopencv_world470
+\end{lstlisting}
+
+可通过该命令编译依赖 OpenCV 库的 C++ 程序，若编译运行成功则意味着 OpenCV（C++ 依赖库）的编译安装成功。其中，\tt{\$Env:OPENCV470} 是 \tt{build/install} 文件夹。
+
+\subsection{部署测试2}
+
+通过 \tt{pip install} 命令安装内核及插件，然后在程序中引入，并输出内核及各插件的版本号。
+
+\subsection{集成测试1}
+
+通过基于 FFmpeg 的媒体文件信息分析插件分析媒体文件信息，然后通过基于多用途互联网邮件扩展的归类整理插件生成目标地址，最后通过基于 ANSI 控制符的文件信息查看插件以用户友好的方式显示文件信息，退出时通过文件信息统计插件将统计的文件信息图表以图片的形式保存。
+
+额外的环境依赖：FFmpeg 3.4 或更新版本。
+
+对于 Windows 环境，应下载上文中提到的以 LGPL 许可证发行的 FFmpeg 二进制文件；对于 Linux 环境，使用包管理器进行安装，如 Arch Linux 及其衍生版（含 Manjaro 和 Steam OS）应使用命令 \tt{sudo pacman -Syu ffmpeg}，Debian 及其衍生版（含 Ubunte 和 PVE（Proxmox Virtual Environment））应使用 \tt{apt install ffmpeg}。
+
+\subsection{集成测试2}
+
+通过基于散列的相同文件检索插件、基于感知散列的相似图像检索插件和基于分块加速和感知散列的相似图像快速检索插件检索相似相同文件，再将上述插件与基于集合运算解释器的检索插件和基于文件标签的归类整理插件连接到基于 Flask 的 GUI 插件，在网页 GUI 上进行测试。
+
+额外的环境依赖：Flask 2.0 或更新版本；OpenCV（C++ 依赖库）3.4 或更新版本。
+
+Flask 可直接通过 \tt{pip install} 命令安装。对于使用 MinGW 的 Windows 环境，应按照上文中的 OpenCV 编译方法进行编译和安装；对于使用 MSVC 等的 Windows 环境，应从 OpenCV 官方渠道下载安装包；对于 Linux 环境，使用包管理器进行安装，如 Arch Linux 及其衍生版应使用命令 \tt{sudo pacman -Syu opencv vtk hdf5}（此处同时手动安装了依赖项 \tt{vtk} 和 \tt{hdf5}，它们不会随着 \tt{opencv} 自动安装），Debian 及其衍生版应使用命令 \tt{apt install libopencv-dev}。
+
+\subsection{集成测试3}
+
+通过基于粒子群优化的子图匹配插件匹配子图，并将结果以图片的形式输出。
+
+\subsection{集成测试4}
+
+通过基于 GoogLeNet 的图像标签生成插件生成图像标签，并通过基于 ANSI 控制符的文件信息查看插件将结果以用户友好的方式显示文件信息。
+
+额外的环境依赖：TensorFlow 1.9 或更新版本。
+
+对于不同的软硬件环境，如不同的操作系统，GPU 是否支持 CUDA 和 CUDNN 以及它们的版本，CPU 是否支持 AVX 和 AVX2 指令集，是否位于 CONDA 中，TensorFlow 有着不同的安装方式 \cite{tf}。
+
+\section{名词定义和约定}
+
+如表 \ref{table:test}，为方便以表格的形式展示测试环境和测试结果，本文进行了如下的名词定义和约定：
+
+\begin{enumerate}
+    \item \tt{环境 ID} 中的元素是对应环境在本文中的标识符。其中：
+    \begin{enumerate}
+        \item \tt{WIN} 是一个存在于高性能个人电脑中的 Windows 环境。
+        \item \tt{PC} 是一个存在于高性能个人电脑中的 Linux 环境，与 \tt{WIN} 存在于同一台个人电脑中。
+        \item \tt{VM} 是一个存在于 \tt{WIN} 中的 Linux 虚拟机环境。
+        \item \tt{LT} 是一个存在于低性能轻薄笔记本中的 Windows 环境。
+        \item \tt{NAS} 是一个存在于个人级服务器中的 Linux 虚拟机环境。
+        \item \tt{VPS} 是一个存在于商业级服务器中的低性能 Linux 虚拟机环境。
+    \end{enumerate}
+    \item \tt{操作系统} 中的 \tt{Win10} 代表 Windows 10 操作系统。
+    \item \tt{版本号} 中的元素是 Windows 的操作系统版本号或 Linux 内核版本号。
+    \item \tt{CPU} 中的 \tt{C} 是核心（Core），\tt{T} 是线程（Thread），\tt{$n$C$m$T} 指该计算机的 CPU 具有 $n$ 个核心，$m$ 个线程。
+    \item \tt{硬盘速度} 中的数字（\tt{3.0} 或 \tt{4.0}）指该硬盘支持 PCIe（Peripheral Component Interconnect Express, PCI Express, PCI-E）的 3.0 或 4.0 标准。SSD 是固态硬盘（solid-state drive）；HDD 是硬盘驱动器（hard disk drive, hard disk），为了与后来出现的固态硬盘相区分，也称机械硬盘。
+    \item \tt{C/C++} 中的元素是该环境的 C/C++ 编译器版本。
+    \item 环境项（如 \tt{C/C++}）中的 \tt{/} 意为不需要该环境；测试项（如 \tt{部署测试 1}）中的 \tt{/} 意为由于环境的限制，不进行该测试。
+\end{enumerate}
+
+\section{测试环境和测试结果}
+
+为保证充分测试，验证本软件的正确性和鲁棒性，本软件在多台不同的计算机上运行测试。
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|cccccc|} 
+    \hline
+    环境 ID &
+    WIN & PC & VM &
+    LT & NAS & VPS \\ 
+    \hline
+    架构 &
+    x86\_64 & x86\_64 & x86\_64 &
+    x86\_64 & x86\_64 & x86\_64 \\
+    \hline
+    操作系统 &
+    Win10 & Manjaro & Ubuntu &
+    Win10 & Debian & PVE \\
+    \hline
+    版本号 &
+    22H2 & 5.15 & 4.4.0 &
+    22H2 & 5.15 & 5.15 \\
+    \hline
+    CPU &
+    16C32T & 16C32T & 16C32T &
+    4C8T & 4C8T & 1C2T  \\
+    \hline
+    CUDA 支持 &
+    有 & 有 & 无 &
+    无 & 无 & 无 \\
+    \hline
+    内存 &
+    64 GB & 64 GB & 32 GB &
+    16 GB & 24 GB & 2 GB \\
+    \hline
+    硬盘速度 &
+    4.0 SSD & 4.0 SSD & 4.0 SSD &
+    3.0 SSD & 3.0 SSD & HDD \\
+    \hline
+    Python &
+    3.11.3 & 3.9.5 & 3.8.10 &
+    3.11.3 & 3.9.2 & 3.9.2 \\
+    \hline
+    C/C++ &
+    mingw 12.2 & / & / &
+    mingw 12.2 & / & / \\
+    \hline
+    TensorFlow &
+    2.12.0 & 2.12.0 & 2.12.0 &
+    2.12.0 & / & / \\
+    \hline
+    OpenCV &
+    4.7.0 & 4.5 & 4.2.0 &
+    4.6.0 & 4.5.1 & 4.5.1 \\
+    \hline
+    FFmpeg &
+    6.0 & 4.3 & 4.2.7 &
+    6.0 & 4.3.6 & 4.3.6 \\
+    \hline
+    单元测试 &
+    通过 & 通过 & 通过 &
+    通过 & 通过 & 通过 \\
+    \hline
+    部署测试1 &
+    通过 & / & / &
+    通过 & / & / \\
+    \hline
+    部署测试2 &
+    通过 & 通过 & 通过 &
+    通过 & 通过 & 通过 \\
+    \hline
+    集成测试1 &
+    通过 & 通过 & 通过 &
+    通过 & 通过 & 通过 \\
+    \hline
+    集成测试2 &
+    通过 & 通过 & 通过 &
+    通过 & 通过 & / \\
+    \hline
+    集成测试3 &
+    通过 & 通过 & 通过 &
+    通过 & 通过 & / \\
+    \hline
+    集成测试4 &
+    通过 & 通过 & 通过 &
+    通过 & / & / \\
+    \hline
+\end{tabular}
+\caption{计算机环境及测试项}
+\label{table:test}
+\end{table}
+
+经过严格的试验，结果表明本软件的正确性和鲁棒性满足需求。

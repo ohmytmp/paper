@@ -1,0 +1,128 @@
+\chapter{内核详细设计与实现}
+
+\section{内核设计}
+
+\subsection{常量}
+
+本软件内核提供了一些常量：
+
+\begin{enumerate}
+    \item 常量 \tt{EVENT}。此常量为一个对象，存在多个常量属性，这些属性是本软件默认的事件。
+    \item 常量 \tt{TYPE}。此常量为一个对象，存在多个常量属性，这些属性是本软件默认的文件类型。
+\end{enumerate}
+
+\subsection{接口设计}
+
+对于每个文件的信息，定义了信息类 \tt{Info}。此类默认包括 \tt{SRC}、\tt{BASE}、\tt{EXT}、\tt{TYPE}、\tt{ID}、\tt{MD5}、\tt{SHA256}、\tt{DST} 等默认成员变量。其中，成员变量 \tt{TYPE} 的值是常量 \tt{TYPE} 的一个常量属性；成员变量 \tt{TAGS} 的初始值是一个空队列 \tt{list()}。
+
+内核与插件进行通信时，默认传输一个 \tt{Info} 对象。插件管理系统根据事件的不同，判断选择传输 \tt{Info} 对象本身还是它的深拷贝。
+
+同时，本软件内核提供了一些插件类。基本插件类 \tt{PluginBase} 具有 \tt{func}、\tt{event}、\tt{level} 等成员变量（方法）。基于 Python 的动态语言特点，一个成员方法的赋值和调用等同于一个成员变量的赋值和调用（如果它是可调用的），一个闭包可以直接赋值给 \tt{func}。\tt{event} 和 \tt{level} 则分别是插件对应的事件和优先级，在注册时将被使用。
+
+基本插件类 \tt{PluginBase} 初始化函数定义：
+
+\begin{lstlisting}[language=Python]
+def __init__(self, event: int = ..., level: int = ...) -> None
+\end{lstlisting}
+
+此外，本软件内核还提供了一些基于不同事件的插件类，均直接继承自基本插件类 \tt{PluginBase}。这些插件类添加了不同的默认事件和默认行为：
+
+\begin{enumerate}
+    \item 插件类 \tt{PluginPredictType}。此类提供了预测文件类型的默认行为，插件开发者只需要重载此类（子类）的预测方法即可。
+    \item 插件类 \tt{PluginAnalysis}。此类提供了分析文件的默认行为，插件开发者只需要重载此类（子类）的分析方法即可。
+    \item 插件类 \tt{PluginAddTags}。此类提供了增加文件标签类型的默认行为，插件开发者只需要重载此类（子类）的获取标签方法即可。
+    \item 插件类 \tt{PluginDestination}。此类提供了预测文件目标地址的默认行为，插件开发者需要重载此类（子类）的获取标签方法和目标地址检查方法。
+    \item 插件类 \tt{PluginAfter}。此类提供了只读性质的插件的默认行为，继承此类的类被注册后，将获得文件信息时将获得信息的深拷贝。
+\end{enumerate}
+
+插件开发者开发插件时，可以继承相关插件类，以方便开发。
+
+\subsection{事件驱动器}
+
+本软件提供了三种插件注册的接口：
+
+\begin{enumerate}
+    \item 直接注册函数（方法）。需要提供的参数除了需要注册的函数（方法）本身外，还有事件和优先级。插件管理系统将根据事件和优先级注册函数（方法），以通过事件驱动器调用。优点是不须要在函数（或方法所在的类）定义时注册。缺点是语法不够简洁。
+    注册函数定义：
+\begin{lstlisting}[language=Python]
+def register_func(
+    func: Callable,
+    event: str = ...,
+    level: int = ...,
+) -> None
+\end{lstlisting}
+    注册方式：
+\begin{lstlisting}[language=Python]
+register_func(
+    your_func,
+    event = EVENT.your_func_event,
+    level = your_func_level,
+)
+\end{lstlisting}
+    \item 通过 Python 函数（方法）装饰器注册函数。在注册时，需要在装饰器中提供事件和优先级两个参数。插件管理系统将根据事件和优先级注册函数（方法），以通过事件驱动器调用。优点是语法简洁。缺点是必须要在函数（或函数所在的类）定义时注册。
+    注册函数定义：
+\begin{lstlisting}[language=Python]
+def register_handle(
+    event: str = ...,
+    level: int = ...,
+) -> Callable:
+    def __get_f(f: Callable) -> Callable:
+        def __new_f(*args, **kwds):
+            ...
+            return f(*args, **kwds)
+        ...
+        return __new_f
+    ...
+    return __get_f
+\end{lstlisting}
+    注册方式：
+\begin{lstlisting}[language=Python]
+@register_handle(
+    event = EVENT.your_func_event,
+    level = your_func_level
+)
+def your_func(info: Info) -> None:
+    ...
+\end{lstlisting}
+    \item 通过插件对象注册函数。继承插件管理系统提供的插件类并实例化，或者创建符合成员方法要求的对象。在注册时，参数仅有对象。插件管理系统将从对象成员变量中获得方法、事件和优先级三个参数，然后根据事件和优先级注册方法，以通过事件驱动器调用。优点是不须要在函数（或方法所在的类）定义时注册，且插件管理系统提供的插件类中的语法盐（syntactic salt，指在计算机语言中为了降低程序员撰写出不良代码的设计，是名词“语法糖”的扩展）可以在一定程度上降低潜藏错误存在的可能 \cite{wiki_sugar}。缺点是语法不够简洁。
+    注册函数定义：
+\begin{lstlisting}[language=Python]
+def register_plugin(p: PluginBase) -> None
+\end{lstlisting}
+    注册方式：
+\begin{lstlisting}[language=Python]
+class Your_class(PluginBase):
+    def __init__(self, ...) -> None:
+        ...
+
+    def func(self, info: Info) -> None:
+        ...
+
+...
+your_object = Your_Calss(...)
+...
+register_plugin(your_object)
+\end{lstlisting}
+\end{enumerate}
+
+插件注册表是一个以事件为键，以插件列表为值的字典（\tt{dict}）。“插件列表”是一个以被注册的插件对应的函数（方法）为元素的列表（\tt{list}）。
+
+对于每一个事件，当事件发生时，事件驱动器将从插件注册表中取得对应的插件列表，然后按照给定的优先级运行插件对应的函数（方法）。当插件有只读标记时，将传输文件信息的深拷贝。
+
+\section{默认附加插件设计}
+
+\subsection{文件信息插件设计}
+
+本插件将通过系统接口，读取文件元信息，并将其转化成程序友好的格式，在信息类 \tt{Info} 中保存。同时，本插件可以将信息类 \tt{Info} 中保存的数据转化成字典的格式。
+
+\subsection{标签生成插件}
+
+本插件可以读取文件信息，即信息类 \tt{Info} 中保存的数据，然后通过简单的逻辑，根据数据给文件增加标签。此逻辑保证确定性和白盒（可解释性）。
+
+本插件主要函数返回值是一个包含一些标签的集合（\tt{set}）。
+
+\subsection{基于多用途互联网邮件扩展的标签生成插件}
+
+多用途互联网邮件扩展是一个互联网标准，它扩展了电子邮件的格式，使其能够支持多种文件类型。标准化的互联网协议对于确保互联网持续正常运行至关重要，可以让那些使用不同供应商提供的设备或软件的用户能够有效通信 \cite{iana}。此标准由互联网号码分配局指定和维护。
+
+Python 的 mimetypes 模块可以在文件名或 URL 和关联到文件扩展名的多用途互联网邮件扩展类型之间执行转换。此模块可以读取于互联网号码分配局已注册的多用途互联网邮件扩展官方类型数据库以及附加的非标准类型数据库，判断文件的类型 \cite{py_doc}。
